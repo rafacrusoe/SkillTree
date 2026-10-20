@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. O Jogador
+model User {
+  id     String @id @default(uuid())
+  name   String
+  email  String?
+  skills UserSkill[]
+}
+
+// 2. O Nó da Árvore (Habilidade)
+model Skill {
+  id          String @id @default(uuid())
+  name        String
+  description String?
+  iconName    String?
+  positionX   Float
+  positionY   Float
+  isArchived  Boolean @default(false)
+  
+  requirementsAsSource SkillRequirement[] @relation("SourceSkill")
+  requirementsAsTarget SkillRequirement[] @relation("TargetSkill")
+  users                UserSkill[]
+}
+
+// 3. A Linha de Conexão (Pré-requisitos)
+model SkillRequirement {
+  id       String @id @default(uuid())
+  sourceId String
+  targetId String
+
+  source Skill @relation("SourceSkill", fields: [sourceId], references: [id])
+  target Skill @relation("TargetSkill", fields: [targetId], references: [id])
+}
+
+// 4. O Progresso do Jogador (LOCKED, UNLOCKED, COMPLETED)
+model UserSkill {
+  id      String @id @default(uuid())
+  userId  String
+  skillId String
+  status  String @default("LOCKED") 
+
+  user  User  @relation(fields: [userId], references: [id])
+  skill Skill @relation(fields: [skillId], references: [id])
+
+  @@unique([userId, skillId]) // Impede que o jogador tenha a mesma habilidade duplicada
+}
